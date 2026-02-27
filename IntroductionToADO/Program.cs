@@ -27,14 +27,18 @@ namespace IntroductionToADO
             Console.WriteLine("\n-------------------------------------------------------------\n");
 
             connector.Select("SELECT * FROM Directors");
+            Console.WriteLine("\n-------------------------------------------------------------\n");
 
             Console.WriteLine("Добавляем первичные ключи...\n");
 
-            // Автоматическое имя ограничения
             connector.AddPrimaryKey("Directors", "director_id");
 
-            // Своё имя ограничения
             connector.AddPrimaryKey("Movies", "movie_id", "PK_Movies");
+            Console.WriteLine("\n-------------------------------------------------------------\n");
+
+            connector.Update("Directors",
+                 "first_name = N'Christopher', last_name = N'Nolan'",
+                 "director_id = 7");
         }
     }
 }

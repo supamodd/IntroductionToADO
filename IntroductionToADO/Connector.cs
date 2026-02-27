@@ -72,6 +72,23 @@ namespace IntroductionToADO
             }
         }
 
+        public void Update(string table, string setClause, string condition = "")
+        {
+            string cmd = $"UPDATE {table} SET {setClause}";
+            if (!string.IsNullOrWhiteSpace(condition))
+                cmd += $" WHERE {condition}";
+
+            cmd += ";";
+
+            ExecuteNonQuery(cmd);
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"🔄 Таблица '{table}' обновлена: {setClause}");
+            if (!string.IsNullOrWhiteSpace(condition))
+                Console.WriteLine($"   Условие: {condition}");
+            Console.ResetColor();
+        }
+
         // ──────────────────────────────────────────────────────────────
         // Insert (теперь тоже через общий метод)
         // ──────────────────────────────────────────────────────────────

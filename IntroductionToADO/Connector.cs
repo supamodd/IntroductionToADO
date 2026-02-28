@@ -10,138 +10,74 @@ namespace IntroductionToADO
 {
     class Connector
     {
-        private readonly string connection_string;
-        private readonly SqlConnection connection;
-
+        string connection_string;
+        SqlConnection connection;
         public Connector(string connection_string)
         {
             this.connection_string = connection_string;
             this.connection = new SqlConnection(connection_string);
         }
-
+        public void Select(string cmd)
+        {
+            connection.Open();
+            SqlCommand command = new SqlCommand(cmd, connection);
+            SqlDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                //Console.WriteLine($"{reader[0]}\t{reader[1]}\t{reader[2]}");
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    Console.Write(reader[i].ToString().PadRight(29));
+                }
+                Console.WriteLine();
+            }
+            reader.Close();
+            connection.Close();
+        }
         public void Select(string fields, string tables, string condition = "")
         {
             string cmd = $"SELECT {fields} FROM {tables}";
-            if (!string.IsNullOrWhiteSpace(condition))
-                cmd += $" WHERE {condition}";
-
+            if (condition != "") cmd += $" WHERE {condition}";
             cmd += ";";
-            ExecuteAndPrint(cmd);
+            Select(cmd);
         }
-
-        public void Select(string fullQuery)
+        public void Insert(string cmd)
         {
-            string cmd = fullQuery.Trim();
-            if (!cmd.EndsWith(";")) cmd += ";";
-            ExecuteAndPrint(cmd);
+            connection.Open();
+            SqlCommand command = new SqlCommand(cmd, connection);
+            command.ExecuteNonQuery();
+            connection.Close();
         }
-
-        public void AddPrimaryKey(string table, string pkColumn, string constraintName = null)
-        {
-            if (string.IsNullOrWhiteSpace(constraintName))
-                constraintName = $"PK_{table}_{pkColumn}";
-
-            string cmd = $"ALTER TABLE {table} " +
-                         $"ADD CONSTRAINT {constraintName} " +
-                         $"PRIMARY KEY ({pkColumn});";
-
-            try
-            {
-                ExecuteNonQuery(cmd);
-
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"✅ Первичный ключ '{constraintName}' успешно добавлен к таблице '{table}' " +
-                                  $"(колонка: {pkColumn})");
-                Console.ResetColor();
-            }
-            catch (SqlException ex)
-                when (ex.Message.Contains("already has a primary key") ||
-                      ex.Number == 1750 || ex.Number == 1779)
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"ℹ️  Таблица '{table}' уже имеет первичный ключ. Пропускаем.");
-                Console.ResetColor();
-            }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"❌ Ошибка при добавлении PK для таблицы '{table}':");
-                Console.WriteLine($"   {ex.Message}");
-                Console.ResetColor();
-                throw; 
-            }
-        }
-
-        public void Update(string table, string setClause, string condition = "")
-        {
-            string cmd = $"UPDATE {table} SET {setClause}";
-            if (!string.IsNullOrWhiteSpace(condition))
-                cmd += $" WHERE {condition}";
-
-            cmd += ";";
-
-            ExecuteNonQuery(cmd);
-
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"🔄 Таблица '{table}' обновлена: {setClause}");
-            if (!string.IsNullOrWhiteSpace(condition))
-                Console.WriteLine($"   Условие: {condition}");
-            Console.ResetColor();
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        // Insert (теперь тоже через общий метод)
-        // ──────────────────────────────────────────────────────────────
         public void Insert(string table, string values)
         {
-            string cmd = $"INSERT INTO {table} VALUES ({values});";
-            ExecuteNonQuery(cmd);
+            string cmd = $"INSERT INTO {table} VALUES ({values})";
+            Insert(cmd);
         }
-         
-        // ──────────────────────────────────────────────────────────────
-        // Приватные вспомогательные методы
-        // ──────────────────────────────────────────────────────────────
-      
-        private void ExecuteAndPrint(string commandText)
+        public object Scalar(string cmd)
         {
+            SqlCommand command = new SqlCommand(cmd, connection);
             connection.Open();
-            try
-            {
-                using (SqlCommand command = new SqlCommand(commandText, connection))
-                using (SqlDataReader reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        for (int i = 0; i < reader.FieldCount; i++)
-                        {
-                            Console.Write(reader[i].ToString().PadRight(29));
-                        }
-                        Console.WriteLine();
-                    }
-                }
-            }
-            finally
-            {
-                if (connection.State == System.Data.ConnectionState.Open)
-                    connection.Close();
-            }
+            object value = command.ExecuteScalar();
+            //int value = Convert.ToInt32(command.ExecuteScalar());
+            connection.Close();
+            return value;
         }
-
-        private void ExecuteNonQuery(string commandText)
+        public string GetPrimaryKeyColumn(string table)
         {
-            connection.Open();
-            try
-            {
-                using (SqlCommand command = new SqlCommand(commandText, connection))
-                {
-                    command.ExecuteNonQuery();
-                }
-            }
-            finally
-            {
-                if (connection.State == System.Data.ConnectionState.Open)
-                    connection.Close();
-            }
+            return (string)Scalar
+(
+$"SELECT COLUMN_NAME " +
+$"FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE " +
+$"WHERE CONSTRAINT_NAME = (SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_NAME = N'{table}' AND CONSTRAINT_TYPE=N'PRIMARY KEY')"
+);
+        }
+        public int GetLastPrimaryKey(string table)
+        {
+            return Convert.ToInt32(Scalar($"SELECT MAX({GetPrimaryKeyColumn(table)}) FROM {table}"));
+        }
+        public int GetNextPrimaryKey(string table)
+        {
+            return GetLastPrimaryKey(table) + 1;
         }
     }
 }

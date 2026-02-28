@@ -20,25 +20,17 @@ namespace IntroductionToADO
             connector.Select("title,year,first_name,last_name", "Movies,Directors", "director=director_id");
             Console.WriteLine("\n-------------------------------------------------------------\n");
 
-            //connector.Insert("Directors", "6,N'Tarantino',N'Quentin'");
+            string table = "Movies";
+            //Console.WriteLine(connector.Scalar($"SELECT MAX(director_id) FROM Directors"));
+            Console.WriteLine(connector.GetLastPrimaryKey(table));
+            Console.WriteLine(connector.GetNextPrimaryKey(table));
+            Console.WriteLine(connector.GetPrimaryKeyColumn(table));
+            connector.Insert("Directors", $"{connector.GetNextPrimaryKey("Directors")},N'Besson',N'Luc'");
             connector.Select("*", "Directors");
-
-            connector.Select("SELECT title, year, first_name, last_name FROM Movies JOIN Directors ON Movies.director = Directors.director_id");
             Console.WriteLine("\n-------------------------------------------------------------\n");
 
-            connector.Select("SELECT * FROM Directors");
-            Console.WriteLine("\n-------------------------------------------------------------\n");
+            connector.Select(cmd);
 
-            Console.WriteLine("Добавляем первичные ключи...\n");
-
-            connector.AddPrimaryKey("Directors", "director_id");
-
-            connector.AddPrimaryKey("Movies", "movie_id", "PK_Movies");
-            Console.WriteLine("\n-------------------------------------------------------------\n");
-
-            connector.Update("Directors",
-                 "first_name = N'Christopher', last_name = N'Nolan'",
-                 "director_id = 7");
         }
     }
 }

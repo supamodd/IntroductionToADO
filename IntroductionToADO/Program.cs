@@ -25,7 +25,13 @@ namespace IntroductionToADO
             Console.WriteLine(connector.GetLastPrimaryKey(table));
             Console.WriteLine(connector.GetNextPrimaryKey(table));
             Console.WriteLine(connector.GetPrimaryKeyColumn(table));
-            connector.Insert("Directors", $"{connector.GetNextPrimaryKey("Directors")},N'Besson',N'Luc'");
+            Console.WriteLine("\nПытаемся добавить режиссёра...");
+
+            int nextId = connector.GetNextPrimaryKey("Directors");
+
+            connector.Insert("Directors",
+                             $"{nextId},N'Besson',N'Luc'",
+                             "RTRIM(LTRIM(last_name)) = N'Besson' AND RTRIM(LTRIM(first_name)) = N'Luc'");
             connector.Select("*", "Directors");
             Console.WriteLine("\n-------------------------------------------------------------\n");
 

@@ -7,17 +7,18 @@ using System.Data.SqlClient;
 
 namespace IntroductionToADO
 {
-    class Connector
+    public class Connector   // сделал паблик
     {
         string connection_string;
         SqlConnection connection;
 
-        public Connector(string connection_string)
+        public Connector(string connection_string) 
         {
             this.connection_string = connection_string;
             this.connection = new SqlConnection(connection_string);
         }
 
+        
         public void Select(string cmd)
         {
             connection.Open();
@@ -85,7 +86,7 @@ namespace IntroductionToADO
                     return;
                 }
             }
-            Insert(table, values);  
+            Insert(table, values);
         }
 
         public object Scalar(string cmd)
@@ -124,7 +125,6 @@ namespace IntroductionToADO
             return GetLastPrimaryKey(table) + 1;
         }
 
-        //-------------------- Проверка существования записи + DEBUG --------------------
         public bool RecordExists(string table, string condition)
         {
             if (string.IsNullOrWhiteSpace(condition))

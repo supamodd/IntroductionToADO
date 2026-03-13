@@ -1,5 +1,4 @@
-﻿using IntroductionToADO;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,30 +10,42 @@ namespace ConnectorCheck
     {
         static void Main(string[] args)
         {
-            string connection_string = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=Movies_SPU_411;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+            string connection_string = "Data Source=SUPAMODDPC\\SQLEXPRESS;Initial Catalog=SPU_411_Import;Integrated Security=True;Connect Timeout=30;Encrypt=True;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+            Connector.Connector connector = new Connector.Connector(connection_string);
 
-            Connector connector = new Connector(connection_string);
+            Console.WriteLine("Тест 1: Select из Directions");
+            connector.Select("SELECT * FROM Directions");
 
-            Console.WriteLine("=== Тест DLL ===\n");
+            Console.WriteLine("\nТест 2: Select с условием из Groups");
+            connector.Select("group_id, group_name", "Groups", "group_id > 1");
 
-            // Тест Select
-            connector.Select("title,year,first_name,last_name",
-                             "Movies,Directors",
-                             "director=director_id");
+            Console.WriteLine("\nТест 3: Select из Teachers");
+            connector.Select("SELECT TOP 5 * FROM Teachers");
 
-            Console.WriteLine("\n-------------------------------------------------------------\n");
+            Console.WriteLine("\nТест 4: GetPrimaryKeyColumn для Directions");
+            string pkColumn = connector.GetPrimaryKeyColumn("Directions");
+            Console.WriteLine($"Первичный ключ для Directions: {pkColumn}");
 
-            // Тест с защитой от дублей
-            Console.WriteLine("Пытаемся добавить режиссёра (с проверкой)...");
-            int nextId = connector.GetNextPrimaryKey("Directors");
-            connector.Insert("Directors",
-                             $"{nextId},N'Besson',N'Luc'",
-                             "RTRIM(LTRIM(last_name)) = N'Besson' AND RTRIM(LTRIM(first_name)) = N'Luc'");
+            Console.WriteLine("\nТест 5: GetLastPrimaryKey и GetNextPrimaryKey для Directions");
+            int lastPk = connector.GetLastPrimaryKey("Directions");
+            int nextPk = connector.GetNextPrimaryKey("Directions");
+            Console.WriteLine($"Последний PK: {lastPk}, Следующий PK: {nextPk}");
 
-            connector.Select("*", "Directors");
+            Console.WriteLine("\nТест 6: Scalar (COUNT из Students)");
+            object count = connector.Scalar("SELECT COUNT(*) FROM Students");
+            Console.WriteLine($"Количество студентов: {count}");
 
-            Console.WriteLine("\n=== DLL успешно работает! ===");
-            Console.ReadKey();
+            Console.WriteLine("\nТест 7: GetPrimaryKey по условию из Groups");
+            
+            object pk = connector.GetPrimaryKey("Groups", "group_name", "SPU 411"); 
+            Console.WriteLine($"PK для группы: {pk ?? "Не найдено"}");
+
+            Console.WriteLine("\nТест 8: GetPrimaryKey через cmd из Holidays");
+            object holidayPk = connector.GetPrimaryKey("SELECT TOP 1 holiday_id FROM Holidays WHERE holiday_date = '2026-02-23'");
+            Console.WriteLine($"PK для праздника: {holidayPk ?? "Не найдено"}");
+
+            Console.WriteLine("\nТест 11: Select из Schedule");
+            connector.Select("SELECT TOP 10 * FROM Schedule");
         }
     }
 }

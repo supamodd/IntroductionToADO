@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectorCheck", "Connector
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectorLibrary", "ConnectorLibrary\ConnectorLibrary.csproj", "{8F7B5645-6E5F-4FEB-AA65-97403CA3281C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaxConnector", "MaxConnector\MaxConnector.csproj", "{75B338C2-E2C5-4797-AE09-704F3F6AAB96}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{8F7B5645-6E5F-4FEB-AA65-97403CA3281C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8F7B5645-6E5F-4FEB-AA65-97403CA3281C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8F7B5645-6E5F-4FEB-AA65-97403CA3281C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75B338C2-E2C5-4797-AE09-704F3F6AAB96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75B338C2-E2C5-4797-AE09-704F3F6AAB96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75B338C2-E2C5-4797-AE09-704F3F6AAB96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75B338C2-E2C5-4797-AE09-704F3F6AAB96}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,73 +1,131 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Data.SqlClient;
 
-namespace IntroductionToADO
+namespace Connector
 {
-    public class Connector   // сделал паблик
+    public class SqlParser
     {
-        string connection_string;
-        SqlConnection connection;
+        public string GetTableFromInsert(string cmd)
+        {
+            string[] parts = cmd.Split(new char[] { ' ', '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
+            return parts[1]; // Assuming format "INSERT INTO table (fields) VALUES (values)"
+        }
 
-        public Connector(string connection_string) 
+        public string GetFieldsFromInsert(string cmd)
+        {
+            int startIndex = cmd.IndexOf('(');
+            int endIndex = cmd.IndexOf(')', startIndex + 1);
+            if (startIndex == -1 || endIndex == -1) return null;
+            return cmd.Substring(startIndex + 1, endIndex - startIndex - 1).Trim();
+        }
+
+        public string GetValuesFromInsert(string cmd)
+        {
+            int valuesStart = cmd.IndexOf("VALUES", StringComparison.OrdinalIgnoreCase);
+            if (valuesStart == -1) return null;
+            string valuesPart = cmd.Substring(valuesStart + "VALUES".Length).Trim();
+            if (valuesPart.StartsWith("(") && valuesPart.EndsWith(")"))
+            {
+                return valuesPart.Substring(1, valuesPart.Length - 2).Trim();
+            }
+            return null;
+        }
+
+        public string BuildCondition(string fields, string values)
+        {
+            string[] s_fields = fields.Split(',');
+            string[] s_values = values.Split(',');
+            if (s_fields.Length != s_values.Length) return null;
+            string condition = "";
+            for (int i = 0; i < s_fields.Length; i++)
+            {
+                string field = s_fields[i].Trim();
+                string value = s_values[i].Trim();
+                if (field.Contains("_id")) continue;
+                condition += (value.Length > 1 && value[0] != 'N' && value[1] != '\'') ?
+                    $"{field}=N'{value}'"
+                    : $"{field}={value}";
+                if (i != s_values.Length - 1) condition += " AND ";
+            }
+            return condition;
+        }
+    }
+
+    public class Connector
+    {
+        private string connection_string;
+        private SqlConnection connection;
+        private SqlParser parser;
+
+        public Connector(string connection_string)
         {
             this.connection_string = connection_string;
             this.connection = new SqlConnection(connection_string);
+            this.parser = new SqlParser();
         }
 
-        
-        public void Select(string cmd)
+        public object GetPrimaryKey(string cmd)
         {
+            SqlCommand command = new SqlCommand(cmd, connection);
             connection.Open();
-            try
-            {
-                using (SqlCommand command = new SqlCommand(cmd, connection))
-                using (SqlDataReader reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        for (int i = 0; i < reader.FieldCount; i++)
-                        {
-                            Console.Write(reader[i].ToString().PadRight(29));
-                        }
-                        Console.WriteLine();
-                    }
-                }
-            }
-            finally
-            {
-                if (connection.State == System.Data.ConnectionState.Open)
-                    connection.Close();
-            }
+            object primary_key = command.ExecuteScalar();
+            connection.Close();
+            return primary_key;
+        }
+
+        public object GetPrimaryKey(string table, string fields, string values)
+        {
+            string condition = parser.BuildCondition(fields, values);
+            if (condition == null) return null;
+            string cmd = $"SELECT {GetPrimaryKeyColumn(table)} FROM {table} WHERE {condition}";
+            return Scalar(cmd);
         }
 
         public void Select(string fields, string tables, string condition = "")
         {
             string cmd = $"SELECT {fields} FROM {tables}";
-            if (!string.IsNullOrWhiteSpace(condition))
-                cmd += $" WHERE {condition}";
+            if (condition != "") cmd += $" WHERE {condition}";
             cmd += ";";
             Select(cmd);
         }
 
-        public void Insert(string cmd)
+        public void Select(string cmd)
         {
             connection.Open();
-            try
+            SqlCommand command = new SqlCommand(cmd, connection);
+            SqlDataReader reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                using (SqlCommand command = new SqlCommand(cmd, connection))
+                for (int i = 0; i < reader.FieldCount; i++)
                 {
-                    command.ExecuteNonQuery();
+                    Console.Write(reader[i].ToString().PadRight(28));
                 }
+                Console.WriteLine();
             }
-            finally
-            {
-                if (connection.State == System.Data.ConnectionState.Open)
-                    connection.Close();
-            }
+            reader.Close();
+            connection.Close();
+        }
+
+        public void Insert(string cmd)
+        {
+            string table = parser.GetTableFromInsert(cmd);
+            string fields = parser.GetFieldsFromInsert(cmd);
+            string values = parser.GetValuesFromInsert(cmd);
+
+            Console.WriteLine(table);
+            Console.WriteLine(fields);
+            Console.WriteLine(values);
+
+            if (GetPrimaryKey(table, fields, values) != null) return;
+
+            connection.Open();
+            SqlCommand command = new SqlCommand(cmd, connection);
+            command.ExecuteNonQuery();
+            connection.Close();
         }
 
         public void Insert(string table, string values)
@@ -76,43 +134,19 @@ namespace IntroductionToADO
             Insert(cmd);
         }
 
-        public void Insert(string table, string values, string uniqueCondition = null)
-        {
-            if (!string.IsNullOrWhiteSpace(uniqueCondition))
-            {
-                if (RecordExists(table, uniqueCondition))
-                {
-                    Console.WriteLine($"⚠️  Запись уже существует в таблице '{table}'. Добавление пропущено.");
-                    return;
-                }
-            }
-            Insert(table, values);
-        }
-
         public object Scalar(string cmd)
         {
+            SqlCommand command = new SqlCommand(cmd, connection);
             connection.Open();
-            try
-            {
-                using (SqlCommand command = new SqlCommand(cmd, connection))
-                {
-                    return command.ExecuteScalar();
-                }
-            }
-            finally
-            {
-                if (connection.State == System.Data.ConnectionState.Open)
-                    connection.Close();
-            }
+            object value = command.ExecuteScalar();
+            connection.Close();
+            return value;
         }
 
         public string GetPrimaryKeyColumn(string table)
         {
-            return (string)Scalar(
-                $"SELECT COLUMN_NAME " +
-                $"FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE " +
-                $"WHERE CONSTRAINT_NAME = (SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_NAME = N'{table}' AND CONSTRAINT_TYPE=N'PRIMARY KEY')"
-            );
+            string cmd = $"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE WHERE CONSTRAINT_NAME = (SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_NAME=N'{table}' AND CONSTRAINT_TYPE=N'PRIMARY KEY')";
+            return (string)Scalar(cmd);
         }
 
         public int GetLastPrimaryKey(string table)
@@ -125,24 +159,12 @@ namespace IntroductionToADO
             return GetLastPrimaryKey(table) + 1;
         }
 
-        public bool RecordExists(string table, string condition)
+        public void Update(string cmd)
         {
-            if (string.IsNullOrWhiteSpace(condition))
-                return false;
-
-            string safeCondition = condition
-                .Replace("first_name =", "RTRIM(LTRIM(first_name)) =")
-                .Replace("last_name =", "RTRIM(LTRIM(last_name)) =")
-                .Replace("title =", "RTRIM(LTRIM(title)) =");
-
-            Console.WriteLine($"[DEBUG] Проверяем существование в таблице '{table}' по условию: {safeCondition}");
-
-            object result = Scalar($"SELECT COUNT(*) FROM {table} WHERE {safeCondition}");
-            int count = Convert.ToInt32(result);
-
-            Console.WriteLine($"[DEBUG] COUNT(*) = {count}");
-
-            return count > 0;
+            SqlCommand command = new SqlCommand(cmd, connection);
+            connection.Open();
+            command.ExecuteNonQuery();
+            connection.Close();
         }
     }
 }

@@ -17,6 +17,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectorLibrary", "Connect
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaxConnector", "MaxConnector\MaxConnector.csproj", "{75B338C2-E2C5-4797-AE09-704F3F6AAB96}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Academy", "Academy\Academy.csproj", "{ED6F3834-DA06-4B56-88C8-F3EDE4F43C18}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBtools", "DBtools\DBtools.csproj", "{6970D0B6-B08B-403F-B1F1-0C649D1D1C3C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,14 @@ Global
 		{75B338C2-E2C5-4797-AE09-704F3F6AAB96}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{75B338C2-E2C5-4797-AE09-704F3F6AAB96}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{75B338C2-E2C5-4797-AE09-704F3F6AAB96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED6F3834-DA06-4B56-88C8-F3EDE4F43C18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED6F3834-DA06-4B56-88C8-F3EDE4F43C18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED6F3834-DA06-4B56-88C8-F3EDE4F43C18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED6F3834-DA06-4B56-88C8-F3EDE4F43C18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6970D0B6-B08B-403F-B1F1-0C649D1D1C3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6970D0B6-B08B-403F-B1F1-0C649D1D1C3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6970D0B6-B08B-403F-B1F1-0C649D1D1C3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6970D0B6-B08B-403F-B1F1-0C649D1D1C3C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

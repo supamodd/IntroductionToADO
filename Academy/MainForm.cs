@@ -181,8 +181,6 @@ namespace Academy
                 dgvTeachersForDiscipline.DataSource = null;
                 return;
             }
-
-            // Важно: имя колонки в DataGridView = discipline_id (как в базе)
             var cell = dgvDisciplines.CurrentRow.Cells["discipline_id"];
             if (cell?.Value == null || cell.Value == DBNull.Value) return;
 
@@ -204,8 +202,6 @@ namespace Academy
                 dgvDisciplinesForTeacher.DataSource = null;
                 return;
             }
-
-            // Важно: имя колонки в DataGridView = teacher_id (как в базе)
             var cell = dgvTeachers.CurrentRow.Cells["teacher_id"];
             if (cell?.Value == null || cell.Value == DBNull.Value) return;
 
@@ -218,6 +214,11 @@ namespace Academy
         WHERE td.teacher = {teachId}";
 
             dgvDisciplinesForTeacher.DataSource = connector.Select(sql);
+        }
+
+        private void dgvTeachersForDiscipline_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
         }
     }
 }

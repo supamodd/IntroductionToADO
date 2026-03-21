@@ -229,6 +229,8 @@
             // 
             // dgvTeachersForDiscipline
             // 
+            this.dgvTeachersForDiscipline.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.dgvTeachersForDiscipline.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvTeachersForDiscipline.Location = new System.Drawing.Point(431, 39);
             this.dgvTeachersForDiscipline.Name = "dgvTeachersForDiscipline";

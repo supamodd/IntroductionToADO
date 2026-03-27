@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using System.Data;
 using System.Data.SqlClient;
+using System.Windows.Forms;
 
 namespace DBtools
 {
@@ -15,33 +16,65 @@ namespace DBtools
         string connection_string;
         SqlConnection connection;
         //public int GetPrimaryKey(string table, string condition)
-        public object GetPrimaryKey(string cmd)
+        public void Insert(string cmd)
         {
-            //string key_name = $"{table.Substring(0, table.Length - 1)}_id";
-            //string cmd = $"SELECT "
-            SqlCommand command = new SqlCommand(cmd, connection);
-            connection.Open();
-            object primary_key = command.ExecuteScalar();
+            Console.WriteLine("=== INSERT ===");
+            Console.WriteLine(cmd);
 
+            connection.Open();
+            SqlCommand command = new SqlCommand(cmd, connection);
+            command.ExecuteNonQuery();
             connection.Close();
-            return primary_key;
+
+            Console.WriteLine("Запись успешно добавлена");
         }
         public object GetPrimaryKey(string table, string fields, string values)
         {
-            string[] s_fields = fields.Split(',');
-            string[] s_values = values.Split(',');
-            if (s_fields.Length != s_values.Length) return null;
-            string condition = "";
-            for (int i = 0; i < s_fields.Length; i++)
+            var fieldList = fields.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                  .Select(f => f.Trim()).ToList();
+
+            var valueList = values.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                  .Select(v => v.Trim()).ToList();
+
+            if (fieldList.Count != valueList.Count) return null;
+
+            var conditions = new List<string>();
+
+            for (int i = 0; i < fieldList.Count; i++)
             {
-                if (s_fields[i].Contains("_id")) continue;
-                string value = s_values[i].Trim();
-                condition += (value.Length > 1 && value[0] != 'N' && value[1] != '\'') ?
-                    $"{s_fields[i].Trim()}=N'{s_values[i].Trim()}'"
-                    : $"{s_fields[i].Trim()}={s_values[i].Trim()}";
-                if (i != s_values.Length - 1) condition += " AND ";
+                string field = fieldList[i];
+                string val = valueList[i];
+
+                if (field.ToLower().Contains("_id") ||
+                    field == "[group]" ||
+                    field == "direction")
+                    continue;
+
+                string part;
+                if (val.StartsWith("N'") || val.StartsWith("'"))
+                {
+                    part = $"{field} = {val}";
+                }
+                else if (int.TryParse(val, out _) || val.Contains(":") || val.Contains("-"))
+                {
+                    part = $"{field} = {val}";
+                }
+                else
+                {
+                    part = $"{field} = N'{val.Replace("'", "''")}'";
+                }
+
+                conditions.Add(part);
             }
-            string cmd = $"SELECT {GetPrimaryKeyColumn(table)} FROM {table} WHERE {condition}";
+
+            if (conditions.Count == 0)
+                return null;
+
+            string condition = string.Join(" AND ", conditions);
+
+            string pkColumn = GetPrimaryKeyColumn(table);
+            string cmd = $"SELECT {pkColumn} FROM {table} WHERE {condition}";
+
             return Scalar(cmd);
         }
 
@@ -85,36 +118,36 @@ namespace DBtools
         }
         public string GetTableFromInsert(string cmd)
         {
-            string[] parts = cmd.Split(' ', '(', ')');
-            return parts[1];
+            string upper = cmd.ToUpper().Trim();
+            int pos = upper.IndexOf("INSERT INTO");
+            if (pos == -1) return "";
+            pos += 12;
+
+            while (pos < upper.Length && char.IsWhiteSpace(upper[pos])) pos++;
+
+            int end = pos;
+            while (end < upper.Length && !char.IsWhiteSpace(upper[end]) && upper[end] != '(')
+                end++;
+
+            return cmd.Substring(pos, end - pos).Trim();
         }
         public string GetFieldFromInsert(string cmd)
         {
-            string[] parts = cmd.Split('(', ')');
-            return parts[1];
+            int firstOpen = cmd.IndexOf('(');
+            if (firstOpen == -1) return "";
+            int firstClose = cmd.IndexOf(')', firstOpen);
+            if (firstClose == -1) return "";
+            return cmd.Substring(firstOpen + 1, firstClose - firstOpen - 1).Trim();
         }
         public string GetValuesFromInsert(string cmd)
         {
-            string[] parts = cmd.Split('(', ')');
-            return parts[3];
+            int lastClose = cmd.LastIndexOf(')');
+            if (lastClose == -1) return "";
+            int lastOpen = cmd.LastIndexOf('(', lastClose);
+            if (lastOpen == -1) return "";
+            return cmd.Substring(lastOpen + 1, lastClose - lastOpen - 1).Trim();
         }
-        public void Insert(string cmd)
-        {
-            Console.WriteLine(GetTableFromInsert(cmd));
-            Console.WriteLine(GetFieldFromInsert(cmd));
-            Console.WriteLine(GetValuesFromInsert(cmd));
-            if (GetPrimaryKey(GetTableFromInsert(cmd), GetFieldFromInsert(cmd), GetValuesFromInsert(cmd)) != null) return;
-            connection.Open();
-            SqlCommand command = new SqlCommand(cmd, connection);
-            command.ExecuteNonQuery();
-            connection.Close();
-        }
-        public void Insert(string table, string values)
-        {
-
-            string cmd = $"INSERT INTO {table} VALUES ({values})";
-            Insert(cmd);
-        }
+       
         public object Scalar(string cmd)
         {
             SqlCommand command = new SqlCommand(cmd, connection);

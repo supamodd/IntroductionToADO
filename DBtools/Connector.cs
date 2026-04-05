@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SqlClient;
-using System.Data.SqlClient;
-using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
+
+using System.Data;
+//using System.Data.SqlClient;
+using System.Drawing;
+using System.IO;
 
 namespace DBtools
 {
@@ -111,12 +111,6 @@ namespace DBtools
             command.ExecuteNonQuery();
             connection.Close();
         }
-        public void Insert(string table, string values)
-        {
-
-            string cmd = $"INSERT INTO {table} VALUES ({values})";
-            Insert(cmd);
-        }
         public object Scalar(string cmd)
         {
             SqlCommand command = new SqlCommand(cmd, connection);
@@ -138,6 +132,12 @@ namespace DBtools
         public int GetNextPrimaryKey(string table)
         {
             return GetLastPrimaryKey(table) + 1;
+        }
+
+        public void Insert(string table, string fields, string values)
+        {
+            string cmd = $"INSERT INTO {table} ({fields}) VALUES ({values})";
+            Insert(cmd);
         }
 
         public void Update(string cmd)

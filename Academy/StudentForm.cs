@@ -9,22 +9,29 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using System.Configuration;
+using DBtools;                    // ← добавил
 
 namespace Academy
 {
     public partial class StudentForm : HumanForm
     {
+        private Connector connector;   // ← добавил
+
         public StudentForm()
         {
             InitializeComponent();
 
-            cbStudentsGroup.DataSource = DataBase.Connector.Select("*", "Groups");
+            // создаём подключение один раз
+            connector = new Connector(ConfigurationManager.ConnectionStrings["SPU_411_Import"].ConnectionString);
+
+            cbStudentsGroup.DataSource = connector.Select("*", "Groups");
             cbStudentsGroup.DisplayMember = "group_name";
             cbStudentsGroup.ValueMember = "group_id";
         }
+
         public StudentForm(int id) : this()
         {
-            DataTable data = DataBase.Connector.Select("*", "Students", $"stud_id={id}");
+            DataTable data = connector.Select("*", "Students", $"stud_id={id}");
             labelID.Text = $"ID: {id}";
             rtbLastName.Text = data.Rows[0]["last_name"].ToString();
             rtbFirstName.Text = data.Rows[0]["first_name"].ToString();
@@ -33,15 +40,15 @@ namespace Academy
             rtbEmail.Text = data.Rows[0]["email"].ToString();
             rtbPhone.Text = data.Rows[0]["phone"].ToString();
             cbStudentsGroup.SelectedValue = Convert.ToInt32(data.Rows[0]["group"].ToString());
-            pictureBoxPhoto.Image = DataBase.Connector.DownloadPhoto(id, "Students", "photo");
+            pictureBoxPhoto.Image = connector.DownloadPhoto(id, "Students", "photo");
         }
 
         private void buttonOK_Click(object sender, EventArgs e)
         {
-            //DONE: format exception in StudentForm
             int id = labelID.Text.Split(':').Last() == "" ? 0 : Convert.ToInt32(labelID.Text.Split(':').Last());
+
             Academy.Models.Student student = new Models.Student
-                (
+            (
                 id,
                 rtbLastName.Text,
                 rtbFirstName.Text,
@@ -51,24 +58,20 @@ namespace Academy
                 rtbPhone.Text,
                 pictureBoxPhoto.Image,
                 Convert.ToInt32(cbStudentsGroup.SelectedValue)
-                );
-            //Console.WriteLine(student.SerializePhoto());
+            );
+
             if (student.id == 0)
             {
-                DataBase.Connector.Insert($"INSERT Students({student.GetNames()}) VALUES ({student})");
-                student.id = (int)DataBase.Connector.Scalar($"SELECT stud_id FROM Students WHERE {student.GetCondition()}");
+                connector.Insert($"INSERT Students({student.GetNames()}) VALUES ({student})");
+                student.id = (int)connector.Scalar($"SELECT stud_id FROM Students WHERE {student.GetCondition()}");
             }
             else
             {
-                DataBase.Connector.Update($"UPDATE Students SET {student.ToStringUpdate()} WHERE stud_id={student.id}");
+                connector.Update($"UPDATE Students SET {student.ToStringUpdate()} WHERE stud_id={student.id}");
             }
-            if (student.photo != null)
-                DataBase.Connector.UploadPhoto(student.SerializePhoto(), student.id, "photo", "Students");
 
-            //DBtools.Connector connector = new DBtools.Connector(ConfigurationManager.ConnectionStrings["SPU_411_Import"].ConnectionString);
-            //			DataBase.Connector.Insert(
-            //$"INSERT Students(last_name,first_name,middle_name,birth_date,[group]) " +
-            //$"VALUES (N'{rtbLastName.Text}',N'{rtbFirstName.Text}',N'{rtbMiddleName.Text}',N'{dtpBirthDate.Value.ToString("yyyy-MM-dd")}',{cbStudentsGroup.SelectedValue})");
+            if (student.photo != null)
+                connector.UploadPhoto(student.SerializePhoto(), student.id, "photo", "Students");
         }
     }
 }

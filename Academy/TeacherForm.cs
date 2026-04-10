@@ -12,6 +12,7 @@ using System.Windows.Forms;
 using System.Configuration;
 using System.IO;
 using DBtools;
+using Academy.Models;
 
 namespace Academy
 {
@@ -20,16 +21,32 @@ namespace Academy
         private Connector connector;
         private byte[] currentPhotoBytes = null;
         private bool _saved = false;
+        private int currentId = 0;
 
         public TeacherForm()
         {
             InitializeComponent();
-
             connector = new Connector(ConfigurationManager.ConnectionStrings["SPU_411_Import"].ConnectionString);
-
             pictureBoxPhoto.SizeMode = PictureBoxSizeMode.Zoom;
             buttonPhoto.Click += buttonPhoto_Click;
-            buttonOK.Click += buttonOK_Click; 
+            buttonOK.Click += buttonOK_Click;
+        }
+
+        public TeacherForm(int id) : this()
+        {
+            currentId = id;
+            DataTable dt = connector.Select("*", "Teachers", $"teacher_id={id}");
+
+            if (dt.Rows.Count > 0)
+            {
+                rtbLastName.Text = dt.Rows[0]["last_name"].ToString();
+                rtbFirstName.Text = dt.Rows[0]["first_name"].ToString();
+                rtbMiddleName.Text = dt.Rows[0]["middle_name"].ToString();
+                dtpBirthDate.Value = Convert.ToDateTime(dt.Rows[0]["birth_date"]);
+                dtpWorkSince.Value = Convert.ToDateTime(dt.Rows[0]["work_since"]);
+
+                pictureBoxPhoto.Image = connector.DownloadPhoto(id, "Teachers", "photo");
+            }
         }
 
         private void buttonPhoto_Click(object sender, EventArgs e)
@@ -38,7 +55,6 @@ namespace Academy
             {
                 ofd.Title = "Выберите фото преподавателя";
                 ofd.Filter = "Изображения|*.jpg;*.jpeg;*.png;*.bmp";
-
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
                     try
@@ -46,18 +62,14 @@ namespace Academy
                         using (Image original = Image.FromFile(ofd.FileName))
                         {
                             Image thumbnail = ResizeToThumbnail(original, 800, 800);
-
                             pictureBoxPhoto.Image?.Dispose();
                             pictureBoxPhoto.Image = thumbnail;
 
                             using (MemoryStream ms = new MemoryStream())
                             {
-                                var jpegEncoder = ImageCodecInfo.GetImageEncoders()
-                                    .First(c => c.FormatID == ImageFormat.Jpeg.Guid);
-
+                                var jpegEncoder = ImageCodecInfo.GetImageEncoders().First(c => c.FormatID == ImageFormat.Jpeg.Guid);
                                 var encParams = new EncoderParameters(1);
                                 encParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 85L);
-
                                 thumbnail.Save(ms, jpegEncoder, encParams);
                                 currentPhotoBytes = ms.ToArray();
                             }
@@ -80,7 +92,6 @@ namespace Academy
             double ratio = Math.Min((double)maxWidth / original.Width, (double)maxHeight / original.Height);
             int newWidth = (int)(original.Width * ratio);
             int newHeight = (int)(original.Height * ratio);
-
             if (newWidth == original.Width && newHeight == original.Height)
                 return original;
 
@@ -102,50 +113,43 @@ namespace Academy
             if (_saved) return;
             _saved = true;
 
-            if (string.IsNullOrWhiteSpace(rtbLastName.Text) ||
-                string.IsNullOrWhiteSpace(rtbFirstName.Text))
+            if (string.IsNullOrWhiteSpace(rtbLastName.Text) || string.IsNullOrWhiteSpace(rtbFirstName.Text))
             {
-                MessageBox.Show("Заполните фамилию и имя преподавателя!",
-                               "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Заполните фамилию и имя преподавателя!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            int teacherId = connector.GetNextPrimaryKey("Teachers");
+            Teacher teacher = new Teacher(
+                currentId,
+                rtbLastName.Text.Trim(),
+                rtbFirstName.Text.Trim(),
+                rtbMiddleName.Text?.Trim() ?? "",
+                dtpBirthDate.Value.ToString("yyyy-MM-dd"),
+                dtpWorkSince.Value.ToString("yyyy-MM-dd"),
+                pictureBoxPhoto.Image
+            );
 
-            string columns = "teacher_id, last_name, first_name, middle_name, birth_date, work_since, photo";
-            string values =
-                $"{teacherId}," +
-                $"N'{rtbLastName.Text.Trim()}'," +
-                $"N'{rtbFirstName.Text.Trim()}'," +
-                $"N'{rtbMiddleName.Text?.Trim() ?? ""}'," +
-                $"N'{dtpBirthDate.Value:yyyy-MM-dd}'," +
-                $"N'{dtpWorkSince.Value:yyyy-MM-dd}',";
-
-            if (currentPhotoBytes != null && currentPhotoBytes.Length > 0)
+            if (teacher.id == 0)   // добавление нового
             {
-                string hex = "0x" + BitConverter.ToString(currentPhotoBytes).Replace("-", "");
-                values += hex;
+                teacher.id = connector.GetNextPrimaryKey("Teachers");                    // ← вот это отличие от студентов
+                connector.Insert($"INSERT Teachers({teacher.GetNames()}) VALUES ({teacher})");
             }
-            else
+            else                   // редактирование
             {
-                values += "NULL";
+                connector.Update($"UPDATE Teachers SET {teacher.ToStringUpdate()} WHERE teacher_id={teacher.id}");
             }
 
-            try
-            {
-                connector.Insert("Teachers", columns, values);
+            // фото (точно как у студентов)
+            if (pictureBoxPhoto.Image != null)
+                connector.UploadPhoto(teacher.SerializePhoto(), teacher.id, "photo", "Teachers");
 
-                MessageBox.Show("Преподаватель успешно добавлен!", "Успех",
-                               MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(teacher.id == 0
+                ? "Преподаватель успешно добавлен!"
+                : "Преподаватель успешно обновлён!",
+                "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                this.DialogResult = DialogResult.OK;
-                this.Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Ошибка при добавлении преподавателя:\n" + ex.Message,
-                               "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            this.DialogResult = DialogResult.OK;
+            this.Close();
         }
     }
 }

@@ -35,15 +35,15 @@
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPhoto)).BeginInit();
             this.SuspendLayout();
             // 
-            // buttonPhoto
+            // labelID
             // 
-            this.buttonPhoto.Location = new System.Drawing.Point(397, 207);
+            this.labelID.Location = new System.Drawing.Point(136, 251);
             // 
             // labelWorkSince
             // 
             this.labelWorkSince.AutoSize = true;
             this.labelWorkSince.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.labelWorkSince.Location = new System.Drawing.Point(55, 205);
+            this.labelWorkSince.Location = new System.Drawing.Point(80, 220);
             this.labelWorkSince.Name = "labelWorkSince";
             this.labelWorkSince.Size = new System.Drawing.Size(115, 24);
             this.labelWorkSince.TabIndex = 12;
@@ -53,7 +53,7 @@
             // 
             this.dtpWorkSince.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.dtpWorkSince.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dtpWorkSince.Location = new System.Drawing.Point(177, 208);
+            this.dtpWorkSince.Location = new System.Drawing.Point(201, 216);
             this.dtpWorkSince.Name = "dtpWorkSince";
             this.dtpWorkSince.Size = new System.Drawing.Size(208, 29);
             this.dtpWorkSince.TabIndex = 13;
@@ -61,7 +61,7 @@
             // buttonOK
             // 
             this.buttonOK.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonOK.Location = new System.Drawing.Point(249, 283);
+            this.buttonOK.Location = new System.Drawing.Point(325, 303);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(136, 35);
             this.buttonOK.TabIndex = 17;
@@ -73,7 +73,7 @@
             // 
             this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.buttonCancel.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonCancel.Location = new System.Drawing.Point(397, 283);
+            this.buttonCancel.Location = new System.Drawing.Point(480, 303);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(143, 35);
             this.buttonCancel.TabIndex = 18;
@@ -84,13 +84,19 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(564, 330);
+            this.ClientSize = new System.Drawing.Size(635, 352);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.buttonOK);
             this.Controls.Add(this.dtpWorkSince);
             this.Controls.Add(this.labelWorkSince);
             this.Name = "TeacherForm";
             this.Text = "TeacherForm";
+            this.Controls.SetChildIndex(this.labelID, 0);
+            this.Controls.SetChildIndex(this.labelBirthDate, 0);
+            this.Controls.SetChildIndex(this.rtbEmail, 0);
+            this.Controls.SetChildIndex(this.rtbPhone, 0);
+            this.Controls.SetChildIndex(this.labelEmail, 0);
+            this.Controls.SetChildIndex(this.labelPhone, 0);
             this.Controls.SetChildIndex(this.rtbLastName, 0);
             this.Controls.SetChildIndex(this.rtbFirstName, 0);
             this.Controls.SetChildIndex(this.rtbMiddleName, 0);

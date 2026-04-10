@@ -55,13 +55,13 @@ namespace Academy
             InitializeComponent();
             tables = new DataGridView[] { dgvStudents, dgvGroups, dgvDirections, dgvDisciplines, dgvTeachers };
             AllocConsole();
-            //connector = new DBtools.Connector("Data Source=DESKTOP-QHG18FL\\SQLEXPRESS;Initial Catalog=SPU_411_Import;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False");
             connector = new Connector(ConfigurationManager.ConnectionStrings["SPU_411_Import"].ConnectionString);
             movies_connector = new Connector("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=Movies_SPU_411;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False");
             //dgvDirections.DataSource = movies_connector.Select("SELECT * FROM Movies");
             //toolStripStatusLabel.Text = $"Колчиество направлений обучения: {connector.Scalar("SELECT COUNT(*) FROM Directions")}";
             //tabControl.SelectedIndex = 1;
             tabControl_SelectedIndexChanged(tabControl, null);
+            dgvTeachers.CellMouseDoubleClick += dgvTeachers_CellMouseDoubleClick;
 
             d_trees = new Dictionary<string, Dictionary<string, int>>();
             d_trees.Add(nameof(d_directions), d_directions);
@@ -89,15 +89,27 @@ namespace Academy
         }
         private void tabControl_SelectedIndexChanged(object sender, EventArgs e)
         {
-            //Console.WriteLine($"{(sender as TabControl).SelectedIndex}\t{tabControl.SelectedTab.Text}");
-
-            /*DataGridView dgv = (this.GetType().GetField($"dgv{tabControl.SelectedTab.Text}").GetValue(this) as DataGridView);
-			dgv.DataSource =	connector.Select($"SELECT * FROM {tabControl.SelectedTab.Text}");
-			toolStripStatusLabel.Text = $"Количество записей: {dgv.RowCount - 1}";*/
-
             int i = tabControl.SelectedIndex;
             tables[i].DataSource = connector.Select(queries[i].ToString());
             toolStripStatusLabel.Text = $"{statusBarSignatures[i]}: {tables[i].RowCount - 1}";
+            if (i == 0) 
+            {
+                buttonAdd.Visible = true;
+                buttonAdd.Parent = tabPageStudents;
+                buttonAdd.Location = new System.Drawing.Point(666, 12);
+                buttonAdd.Text = "Добавить студента";
+            }
+            else if (i == 4)
+            {
+                buttonAdd.Visible = true;
+                buttonAdd.Parent = tabPageTeachers;
+                buttonAdd.Location = new System.Drawing.Point(666, 12);
+                buttonAdd.Text = "Добавить преподавателя";
+            }
+            else
+            {
+                buttonAdd.Visible = false;
+            }
         }
 
         private void cbGroupsDirection_SelectedIndexChanged(object sender, EventArgs e)
@@ -105,7 +117,7 @@ namespace Academy
             if (cbGroupsDirection.SelectedIndex != -1)
                 tables[1].DataSource = connector.Select
                     (
-queries[1].ToString() + $" AND direction={d_trees["d_directions"][cbGroupsDirection.SelectedItem.ToString()]}"
+                queries[1].ToString() + $" AND direction={d_trees["d_directions"][cbGroupsDirection.SelectedItem.ToString()]}"
                     );
         }
 
@@ -130,8 +142,17 @@ queries[1].ToString() + $" AND direction={d_trees["d_directions"][cbGroupsDirect
 
         private void buttonAdd_Click(object sender, EventArgs e)
         {
-            StudentForm form = new StudentForm();
-            form.ShowDialog();
+            if (tabControl.SelectedIndex == 0) 
+            {
+                StudentForm form = new StudentForm();
+                form.ShowDialog();
+            }
+            else if (tabControl.SelectedIndex == 4)
+            {
+                TeacherForm form = new TeacherForm();
+                form.ShowDialog();
+            }
+
             tabControl_SelectedIndexChanged(tabControl, null);
         }
 
@@ -140,6 +161,15 @@ queries[1].ToString() + $" AND direction={d_trees["d_directions"][cbGroupsDirect
             int i = Convert.ToInt32(dgvStudents.Rows[e.RowIndex].Cells[0].Value);
             StudentForm form = new StudentForm(i);
             form.ShowDialog();
+        }
+
+        private void dgvTeachers_CellMouseDoubleClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+            int id = Convert.ToInt32(dgvTeachers.Rows[e.RowIndex].Cells[0].Value);
+            TeacherForm form = new TeacherForm(id);
+            form.ShowDialog();
+            tabControl_SelectedIndexChanged(tabControl, null);
         }
     }
 }

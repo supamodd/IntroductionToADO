@@ -105,7 +105,9 @@ namespace DBtools
             Console.WriteLine(GetTableFromInsert(cmd));
             Console.WriteLine(GetFieldFromInsert(cmd));
             Console.WriteLine(GetValuesFromInsert(cmd));
-            if (GetPrimaryKey(GetTableFromInsert(cmd), GetFieldFromInsert(cmd), GetValuesFromInsert(cmd)) != null) return;
+
+            // if (GetPrimaryKey(GetTableFromInsert(cmd), GetFieldFromInsert(cmd), GetValuesFromInsert(cmd)) != null) return;   ←←← ЗАКОММЕНТИРУЙ ЭТУ СТРОКУ
+
             connection.Open();
             SqlCommand command = new SqlCommand(cmd, connection);
             command.ExecuteNonQuery();
